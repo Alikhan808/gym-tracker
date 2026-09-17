@@ -1,549 +1,668 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-// ---- Program data ----
-const PROGRAM = [
+// ---------- Default program (used on first launch / after reset) ----------
+const DEFAULT_PROGRAM = [
   {
-    id: 'push1', label: 'День 1', name: 'Push', sub: 'грудь · плечи · трицепс',
+    id: 'd1', label: 'День 1', name: 'Push', sub: 'грудь · плечи · трицепс',
     exercises: [
-      { id: 'p1e1', name: 'Жим штанги лёжа', target: '4×6-8' },
-      { id: 'p1e2', name: 'Жим гантелей на наклонной', target: '3×8-10' },
-      { id: 'p1e3', name: 'Жим штанги стоя', target: '3×8-10' },
-      { id: 'p1e4', name: 'Разведение гантелей в стороны', target: '3×12-15' },
-      { id: 'p1e5', name: 'Отжимания на брусьях / блок на трицепс', target: '3×10-12' },
-      { id: 'p1e6', name: 'Французский жим', target: '3×10-12' },
+      { id: 'd1e1', name: 'Жим штанги лёжа', target: '4×6-8' },
+      { id: 'd1e2', name: 'Жим гантелей на наклонной', target: '3×8-10' },
+      { id: 'd1e3', name: 'Жим штанги стоя', target: '3×8-10' },
+      { id: 'd1e4', name: 'Разведение гантелей в стороны', target: '3×12-15' },
+      { id: 'd1e5', name: 'Отжимания на брусьях / блок на трицепс', target: '3×10-12' },
+      { id: 'd1e6', name: 'Французский жим', target: '3×10-12' },
     ],
   },
   {
-    id: 'pull1', label: 'День 2', name: 'Pull', sub: 'спина · бицепс',
+    id: 'd2', label: 'День 2', name: 'Pull', sub: 'спина · бицепс',
     exercises: [
-      { id: 'p2e1', name: 'Становая тяга', target: '4×5-6' },
-      { id: 'p2e2', name: 'Подтягивания', target: '4×6-10' },
-      { id: 'p2e3', name: 'Тяга штанги в наклоне', target: '3×8-10' },
-      { id: 'p2e4', name: 'Тяга верхнего блока широким хватом', target: '3×10-12' },
-      { id: 'p2e5', name: 'Подъём штанги на бицепс', target: '3×10-12' },
-      { id: 'p2e6', name: 'Молотки с гантелями', target: '3×12' },
+      { id: 'd2e1', name: 'Становая тяга', target: '4×5-6' },
+      { id: 'd2e2', name: 'Подтягивания', target: '4×6-10' },
+      { id: 'd2e3', name: 'Тяга штанги в наклоне', target: '3×8-10' },
+      { id: 'd2e4', name: 'Тяга верхнего блока широким хватом', target: '3×10-12' },
+      { id: 'd2e5', name: 'Подъём штанги на бицепс', target: '3×10-12' },
+      { id: 'd2e6', name: 'Молотки с гантелями', target: '3×12' },
     ],
   },
   {
-    id: 'legs', label: 'День 3', name: 'Legs', sub: 'ноги',
+    id: 'd3', label: 'День 3', name: 'Legs', sub: 'ноги',
     exercises: [
-      { id: 'p3e1', name: 'Приседания со штангой', target: '4×6-8' },
-      { id: 'p3e2', name: 'Жим ногами', target: '3×10-12' },
-      { id: 'p3e3', name: 'Румынская тяга', target: '3×8-10' },
-      { id: 'p3e4', name: 'Разгибания ног', target: '3×12-15' },
-      { id: 'p3e5', name: 'Сгибания ног', target: '3×12-15' },
-      { id: 'p3e6', name: 'Икры стоя', target: '4×15-20' },
+      { id: 'd3e1', name: 'Приседания со штангой', target: '4×6-8' },
+      { id: 'd3e2', name: 'Жим ногами', target: '3×10-12' },
+      { id: 'd3e3', name: 'Румынская тяга', target: '3×8-10' },
+      { id: 'd3e4', name: 'Разгибания ног', target: '3×12-15' },
+      { id: 'd3e5', name: 'Сгибания ног', target: '3×12-15' },
+      { id: 'd3e6', name: 'Икры стоя', target: '4×15-20' },
     ],
   },
   {
-    id: 'push2', label: 'День 4', name: 'Push', sub: 'вариация',
+    id: 'd4', label: 'День 4', name: 'Push', sub: 'вариация',
     exercises: [
-      { id: 'p4e1', name: 'Жим гантелей лёжа', target: '4×8-10' },
-      { id: 'p4e2', name: 'Жим на наклонной в Смите/штанге', target: '3×8-10' },
-      { id: 'p4e3', name: 'Жим Арнольда', target: '3×10-12' },
-      { id: 'p4e4', name: 'Разведение в кроссовере', target: '3×12-15' },
-      { id: 'p4e5', name: 'Жим узким хватом', target: '3×10-12' },
-      { id: 'p4e6', name: 'Разгибание на блоке', target: '3×12-15' },
+      { id: 'd4e1', name: 'Жим гантелей лёжа', target: '4×8-10' },
+      { id: 'd4e2', name: 'Жим на наклонной в Смите/штанге', target: '3×8-10' },
+      { id: 'd4e3', name: 'Жим Арнольда', target: '3×10-12' },
+      { id: 'd4e4', name: 'Разведение в кроссовере', target: '3×12-15' },
+      { id: 'd4e5', name: 'Жим узким хватом', target: '3×10-12' },
+      { id: 'd4e6', name: 'Разгибание на блоке', target: '3×12-15' },
     ],
   },
   {
-    id: 'pull2', label: 'День 5', name: 'Pull', sub: 'вариация',
+    id: 'd5', label: 'День 5', name: 'Pull', sub: 'вариация',
     exercises: [
-      { id: 'p5e1', name: 'Тяга Т-грифа / гантели одной рукой', target: '4×8-10' },
-      { id: 'p5e2', name: 'Тяга нижнего блока', target: '3×10-12' },
-      { id: 'p5e3', name: 'Пуловер', target: '3×12-15' },
-      { id: 'p5e4', name: 'Шраги', target: '3×12-15' },
-      { id: 'p5e5', name: 'Подъём на бицепс на скамье Скотта', target: '3×10-12' },
-      { id: 'p5e6', name: 'Обратные разведения на заднюю дельту', target: '3×12-15' },
+      { id: 'd5e1', name: 'Тяга Т-грифа / гантели одной рукой', target: '4×8-10' },
+      { id: 'd5e2', name: 'Тяга нижнего блока', target: '3×10-12' },
+      { id: 'd5e3', name: 'Пуловер', target: '3×12-15' },
+      { id: 'd5e4', name: 'Шраги', target: '3×12-15' },
+      { id: 'd5e5', name: 'Подъём на бицепс на скамье Скотта', target: '3×10-12' },
+      { id: 'd5e6', name: 'Обратные разведения на заднюю дельту', target: '3×12-15' },
     ],
   },
 ];
 
-const TARGETS = { kcal: 3050, protein: 105, protein_hi: 130 };
+const DEFAULT_TARGETS = { kcal: 3050, proteinLo: 105, proteinHi: 130 };
 
-function todayKey() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
-
-const LOGS_KEY = 'exercise-logs';
-const NUTRITION_KEY = 'nutrition-log';
-
-// Simple wrapper matching the shape used by the rest of the component
-const storage = {
-  async get(key) {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return null;
-    return { key, value: raw };
-  },
-  async set(key, value) {
-    localStorage.setItem(key, value);
-    return { key, value };
-  },
+const KEYS = {
+  program: 'gt-program',
+  logs: 'gt-logs',
+  nutrition: 'gt-nutrition',
+  targets: 'gt-targets',
 };
 
+// ---------- Storage helpers (localStorage, safe) ----------
+function readJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed === null || parsed === undefined ? fallback : parsed;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function writeJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+// ---------- Inline editable text ----------
+function Editable({ value, onChange, placeholder, style, multiline = false, ariaLabel }) {
+  const [draft, setDraft] = useState(value);
+  const [editing, setEditing] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
+
+  const commit = () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (next !== value) onChange(next);
+  };
+
+  if (!editing) {
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        aria-label={ariaLabel}
+        onClick={() => setEditing(true)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(true); } }}
+        style={{ ...style, ...S.editableIdle, color: value ? style?.color : '#5C6250' }}
+      >
+        {value || placeholder}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      ref={ref}
+      autoFocus
+      value={draft}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { setDraft(value); setEditing(false); }
+      }}
+      style={{ ...style, ...S.editableInput }}
+    />
+  );
+}
+
 export default function App() {
-  const [activeDay, setActiveDay] = useState(PROGRAM[0].id);
+  const [program, setProgram] = useState(DEFAULT_PROGRAM);
   const [logs, setLogs] = useState({});
   const [nutrition, setNutrition] = useState({});
+  const [targets, setTargets] = useState(DEFAULT_TARGETS);
+  const [activeDay, setActiveDay] = useState(DEFAULT_PROGRAM[0].id);
+  const [editMode, setEditMode] = useState(false);
   const [nutOpen, setNutOpen] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(null);
   const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  const [storageBroken, setStorageBroken] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
-  // Load persisted data on mount
+  // ---- Load ----
   useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      try {
-        const [logsRes, nutRes] = await Promise.allSettled([
-          storage.get(LOGS_KEY),
-          storage.get(NUTRITION_KEY),
-        ]);
-        if (cancelled) return;
-        if (logsRes.status === 'fulfilled' && logsRes.value) {
-          setLogs(JSON.parse(logsRes.value.value));
-        }
-        if (nutRes.status === 'fulfilled' && nutRes.value) {
-          setNutrition(JSON.parse(nutRes.value.value));
-        }
-      } catch (e) {
-        setLoadError(true);
-      } finally {
-        if (!cancelled) setLoaded(true);
-      }
+    const prog = readJSON(KEYS.program, null);
+    const validProgram = Array.isArray(prog) && prog.length > 0 ? prog : DEFAULT_PROGRAM;
+    setProgram(validProgram);
+    setActiveDay(validProgram[0].id);
+    setLogs(readJSON(KEYS.logs, {}));
+    setNutrition(readJSON(KEYS.nutrition, {}));
+    setTargets({ ...DEFAULT_TARGETS, ...readJSON(KEYS.targets, {}) });
+    try {
+      localStorage.setItem('gt-probe', '1');
+      localStorage.removeItem('gt-probe');
+    } catch (e) {
+      setStorageBroken(true);
     }
-    loadData();
-    return () => { cancelled = true; };
+    setLoaded(true);
   }, []);
+
+  // ---- Persist ----
+  const persistProgram = useCallback(next => { setProgram(next); writeJSON(KEYS.program, next); }, []);
+  const persistTargets = useCallback(next => { setTargets(next); writeJSON(KEYS.targets, next); }, []);
+
+  const flash = id => {
+    setSavedFlash(id);
+    setTimeout(() => setSavedFlash(f => (f === id ? null : f)), 700);
+  };
 
   const updateLog = useCallback((exId, field, value) => {
     setLogs(prev => {
-      const next = {
-        ...prev,
-        [exId]: { ...(prev[exId] || {}), [field]: value },
-      };
-      storage.set(LOGS_KEY, JSON.stringify(next)).catch(() => {});
+      const next = { ...prev, [exId]: { ...(prev[exId] || {}), [field]: value } };
+      writeJSON(KEYS.logs, next);
       return next;
     });
-    setSavedFlash(exId);
-    setTimeout(() => setSavedFlash(f => (f === exId ? null : f)), 700);
+    flash(exId);
   }, []);
 
-  const day = PROGRAM.find(d => d.id === activeDay);
   const dateKey = todayKey();
   const nut = nutrition[dateKey] || { kcal: '', protein: '' };
 
   const updateNut = (field, value) => {
     setNutrition(prev => {
-      const next = {
-        ...prev,
-        [dateKey]: { ...(prev[dateKey] || {}), [field]: value },
-      };
-      storage.set(NUTRITION_KEY, JSON.stringify(next)).catch(() => {});
+      const next = { ...prev, [dateKey]: { ...(prev[dateKey] || {}), [field]: value } };
+      writeJSON(KEYS.nutrition, next);
       return next;
     });
   };
 
-  const kcalPct = nut.kcal ? Math.min(100, Math.round((Number(nut.kcal) / TARGETS.kcal) * 100)) : 0;
-  const protPct = nut.protein ? Math.min(100, Math.round((Number(nut.protein) / TARGETS.protein) * 100)) : 0;
+  // ---- Day CRUD ----
+  const addDay = () => {
+    const n = program.length + 1;
+    const day = {
+      id: uid(),
+      label: `День ${n}`,
+      name: 'Новый день',
+      sub: 'группы мышц',
+      exercises: [{ id: uid(), name: 'Новое упражнение', target: '3×10' }],
+    };
+    const next = [...program, day];
+    persistProgram(next);
+    setActiveDay(day.id);
+    setEditMode(true);
+  };
+
+  const deleteDay = dayId => {
+    if (program.length <= 1) return;
+    const idx = program.findIndex(d => d.id === dayId);
+    const next = program.filter(d => d.id !== dayId);
+    persistProgram(next);
+    if (activeDay === dayId) {
+      setActiveDay(next[Math.max(0, idx - 1)].id);
+    }
+  };
+
+  const moveDay = (dayId, dir) => {
+    const idx = program.findIndex(d => d.id === dayId);
+    const target = idx + dir;
+    if (target < 0 || target >= program.length) return;
+    const next = [...program];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    persistProgram(next);
+  };
+
+  const patchDay = (dayId, field, value) => {
+    persistProgram(program.map(d => (d.id === dayId ? { ...d, [field]: value } : d)));
+  };
+
+  // ---- Exercise CRUD ----
+  const addExercise = dayId => {
+    persistProgram(program.map(d => (
+      d.id === dayId
+        ? { ...d, exercises: [...d.exercises, { id: uid(), name: 'Новое упражнение', target: '3×10' }] }
+        : d
+    )));
+  };
+
+  const deleteExercise = (dayId, exId) => {
+    persistProgram(program.map(d => (
+      d.id === dayId ? { ...d, exercises: d.exercises.filter(e => e.id !== exId) } : d
+    )));
+  };
+
+  const moveExercise = (dayId, exId, dir) => {
+    persistProgram(program.map(d => {
+      if (d.id !== dayId) return d;
+      const idx = d.exercises.findIndex(e => e.id === exId);
+      const target = idx + dir;
+      if (target < 0 || target >= d.exercises.length) return d;
+      const list = [...d.exercises];
+      [list[idx], list[target]] = [list[target], list[idx]];
+      return { ...d, exercises: list };
+    }));
+  };
+
+  const patchExercise = (dayId, exId, field, value) => {
+    persistProgram(program.map(d => (
+      d.id === dayId
+        ? { ...d, exercises: d.exercises.map(e => (e.id === exId ? { ...e, [field]: value } : e)) }
+        : d
+    )));
+  };
+
+  // ---- Reset ----
+  const resetAll = () => {
+    persistProgram(DEFAULT_PROGRAM);
+    persistTargets(DEFAULT_TARGETS);
+    setLogs({}); writeJSON(KEYS.logs, {});
+    setNutrition({}); writeJSON(KEYS.nutrition, {});
+    setActiveDay(DEFAULT_PROGRAM[0].id);
+    setConfirmReset(false);
+    setEditMode(false);
+  };
+
+  const day = program.find(d => d.id === activeDay) || program[0];
+  const kcalPct = nut.kcal ? Math.min(100, Math.round((Number(nut.kcal) / (targets.kcal || 1)) * 100)) : 0;
+  const protPct = nut.protein ? Math.min(100, Math.round((Number(nut.protein) / (targets.proteinLo || 1)) * 100)) : 0;
+
+  if (!day) return null;
 
   return (
-    <div style={styles.page}>
+    <div style={S.page}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; }
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+        body { margin: 0; background: #0B0D0A; }
         ::selection { background: #C9FF3D; color: #0B0D0A; }
+        input:focus { border-color: #C9FF3D !important; }
       `}</style>
 
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerTop}>
-          <div>
-            <div style={styles.kicker}>
-              {loaded ? 'ПРОГРАММА НАБОРА МАССЫ' : 'ЗАГРУЗКА ДАННЫХ…'}
-            </div>
-            <h1 style={styles.title}>5-дневный сплит</h1>
+      {/* ---------- Header ---------- */}
+      <header style={S.header}>
+        <div style={S.headerTop}>
+          <div style={{ minWidth: 0 }}>
+            <div style={S.kicker}>{loaded ? 'ТРЕНИРОВОЧНЫЙ ПЛАН' : 'ЗАГРУЗКА…'}</div>
+            <h1 style={S.title}>Трекер тренировок</h1>
           </div>
-          <button
-            style={{ ...styles.nutBtn, ...(nutOpen ? styles.nutBtnActive : {}) }}
-            onClick={() => setNutOpen(o => !o)}
-          >
-            {nutOpen ? '× Закрыть' : '⛽ Питание'}
-          </button>
+          <div style={S.headerBtns}>
+            <button
+              onClick={() => setEditMode(v => !v)}
+              style={{ ...S.pillBtn, ...(editMode ? S.pillBtnActive : {}) }}
+            >
+              {editMode ? '✓ Готово' : '✎ Редактировать'}
+            </button>
+            <button
+              onClick={() => setNutOpen(v => !v)}
+              style={{ ...S.pillBtn, ...(nutOpen ? S.pillBtnActive : {}) }}
+            >
+              {nutOpen ? '× Питание' : '⛽ Питание'}
+            </button>
+          </div>
         </div>
-        {loadError && (
-          <div style={styles.errorNote}>
-            Не удалось загрузить сохранённые данные — записи в этой сессии всё равно будут сохраняться.
+        {storageBroken && (
+          <div style={S.errorNote}>
+            Браузер блокирует сохранение — изменения пропадут при перезагрузке. Отключи режим инкогнито или разреши хранилище для сайта.
           </div>
         )}
-      </div>
+      </header>
 
+      {/* ---------- Nutrition panel ---------- */}
       {nutOpen && (
-        <div style={styles.nutPanel}>
-          <div style={styles.nutRow}>
-            <div style={styles.nutCol}>
-              <div style={styles.nutLabel}>Калории сегодня</div>
+        <section style={S.nutPanel}>
+          <div style={S.nutRow}>
+            <div style={S.nutCol}>
+              <div style={S.nutLabel}>Калории сегодня</div>
               <input
-                type="number"
-                inputMode="numeric"
-                placeholder="0"
-                value={nut.kcal}
-                onChange={e => updateNut('kcal', e.target.value)}
-                style={styles.nutInput}
+                type="number" inputMode="numeric" placeholder="0"
+                value={nut.kcal} onChange={e => updateNut('kcal', e.target.value)}
+                style={S.nutInput}
               />
-              <div style={styles.nutTargetRow}>
-                <div style={styles.barTrack}>
-                  <div style={{ ...styles.barFill, width: `${kcalPct}%`, background: '#C9FF3D' }} />
+              <div style={S.nutTargetRow}>
+                <div style={S.barTrack}>
+                  <div style={{ ...S.barFill, width: `${kcalPct}%`, background: '#C9FF3D' }} />
                 </div>
-                <span style={styles.nutTargetText}>цель {TARGETS.kcal}</span>
+                <span style={S.nutTargetText}>
+                  цель{' '}
+                  <Editable
+                    value={String(targets.kcal)}
+                    onChange={v => persistTargets({ ...targets, kcal: Number(v) || 0 })}
+                    placeholder="0" ariaLabel="Цель по калориям"
+                    style={S.inlineNum}
+                  />
+                </span>
               </div>
             </div>
-            <div style={styles.nutCol}>
-              <div style={styles.nutLabel}>Белок сегодня, г</div>
+
+            <div style={S.nutCol}>
+              <div style={S.nutLabel}>Белок сегодня, г</div>
               <input
-                type="number"
-                inputMode="numeric"
-                placeholder="0"
-                value={nut.protein}
-                onChange={e => updateNut('protein', e.target.value)}
-                style={styles.nutInput}
+                type="number" inputMode="numeric" placeholder="0"
+                value={nut.protein} onChange={e => updateNut('protein', e.target.value)}
+                style={S.nutInput}
               />
-              <div style={styles.nutTargetRow}>
-                <div style={styles.barTrack}>
-                  <div style={{ ...styles.barFill, width: `${protPct}%`, background: '#FF6B4A' }} />
+              <div style={S.nutTargetRow}>
+                <div style={S.barTrack}>
+                  <div style={{ ...S.barFill, width: `${protPct}%`, background: '#FF6B4A' }} />
                 </div>
-                <span style={styles.nutTargetText}>{TARGETS.protein}–{TARGETS.protein_hi} г</span>
+                <span style={S.nutTargetText}>
+                  <Editable
+                    value={String(targets.proteinLo)}
+                    onChange={v => persistTargets({ ...targets, proteinLo: Number(v) || 0 })}
+                    placeholder="0" ariaLabel="Минимум белка" style={S.inlineNum}
+                  />
+                  –
+                  <Editable
+                    value={String(targets.proteinHi)}
+                    onChange={v => persistTargets({ ...targets, proteinHi: Number(v) || 0 })}
+                    placeholder="0" ariaLabel="Максимум белка" style={S.inlineNum}
+                  />
+                  {' '}г
+                </span>
               </div>
             </div>
           </div>
-          <div style={styles.nutHint}>
-            Профицит ~400 ккал сверх нормы + белок 1.8 г/кг веса — без этого рост массы не пойдёт, даже с идеальным тренингом.
+          <div style={S.nutHint}>
+            Нормы можно менять — нажми на цифру цели. Профицит калорий и достаточный белок решают в наборе массы не меньше, чем сами тренировки.
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Day tabs */}
-      <div style={styles.tabsWrap}>
-        <div style={styles.tabs}>
-          {PROGRAM.map(d => (
+      {/* ---------- Day tabs ---------- */}
+      <div style={S.tabsWrap}>
+        <div style={S.tabs}>
+          {program.map(d => (
             <button
               key={d.id}
               onClick={() => setActiveDay(d.id)}
-              style={{
-                ...styles.tab,
-                ...(activeDay === d.id ? styles.tabActive : {}),
-              }}
+              style={{ ...S.tab, ...(activeDay === d.id ? S.tabActive : {}) }}
             >
-              <div style={styles.tabLabelSmall}>{d.label}</div>
-              <div style={styles.tabName}>{d.name}</div>
+              <div style={S.tabLabelSmall}>{d.label}</div>
+              <div style={S.tabName}>{d.name}</div>
             </button>
           ))}
+          <button onClick={addDay} style={S.tabAdd} aria-label="Добавить день">+</button>
         </div>
       </div>
 
-      {/* Day content */}
-      <div style={styles.content}>
-        <div style={styles.dayHeading}>
-          <span style={styles.dayHeadingName}>{day.name}</span>
-          <span style={styles.dayHeadingSub}>{day.sub}</span>
+      {/* ---------- Day content ---------- */}
+      <main style={S.content}>
+        <div style={S.dayHeading}>
+          <div style={S.dayHeadingText}>
+            {editMode ? (
+              <>
+                <Editable
+                  value={day.label} onChange={v => patchDay(day.id, 'label', v)}
+                  placeholder="День N" ariaLabel="Номер дня" style={S.dayLabelEdit}
+                />
+                <Editable
+                  value={day.name} onChange={v => patchDay(day.id, 'name', v)}
+                  placeholder="Название" ariaLabel="Название дня" style={S.dayHeadingName}
+                />
+                <Editable
+                  value={day.sub} onChange={v => patchDay(day.id, 'sub', v)}
+                  placeholder="группы мышц" ariaLabel="Описание дня" style={S.dayHeadingSub}
+                />
+              </>
+            ) : (
+              <>
+                <span style={S.dayHeadingName}>{day.name}</span>
+                <span style={S.dayHeadingSub}>{day.sub}</span>
+              </>
+            )}
+          </div>
+
+          {editMode && (
+            <div style={S.dayTools}>
+              <button onClick={() => moveDay(day.id, -1)} style={S.iconBtn} title="Переместить влево">↑</button>
+              <button onClick={() => moveDay(day.id, 1)} style={S.iconBtn} title="Переместить вправо">↓</button>
+              <button
+                onClick={() => deleteDay(day.id)}
+                disabled={program.length <= 1}
+                style={{ ...S.iconBtn, ...S.iconBtnDanger, ...(program.length <= 1 ? S.iconBtnDisabled : {}) }}
+                title={program.length <= 1 ? 'Нельзя удалить последний день' : 'Удалить день'}
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
 
-        <div style={styles.exList}>
+        <div style={S.exList}>
           {day.exercises.map((ex, i) => {
             const log = logs[ex.id] || {};
-            const flashing = savedFlash === ex.id;
             return (
-              <div key={ex.id} style={styles.exCard}>
-                <div style={styles.exTop}>
-                  <span style={styles.exIndex}>{String(i + 1).padStart(2, '0')}</span>
-                  <div style={styles.exNameWrap}>
-                    <div style={styles.exName}>{ex.name}</div>
-                    <div style={styles.exTarget}>{ex.target}</div>
+              <div key={ex.id} style={S.exCard}>
+                <div style={S.exTop}>
+                  <span style={S.exIndex}>{String(i + 1).padStart(2, '0')}</span>
+                  <div style={S.exNameWrap}>
+                    {editMode ? (
+                      <>
+                        <Editable
+                          value={ex.name}
+                          onChange={v => patchExercise(day.id, ex.id, 'name', v)}
+                          placeholder="Название упражнения"
+                          ariaLabel="Название упражнения" style={S.exName}
+                        />
+                        <Editable
+                          value={ex.target}
+                          onChange={v => patchExercise(day.id, ex.id, 'target', v)}
+                          placeholder="3×10"
+                          ariaLabel="Рекомендуемые подходы и повторы" style={S.exTarget}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <div style={S.exName}>{ex.name}</div>
+                        <div style={S.exTarget}>{ex.target}</div>
+                      </>
+                    )}
                   </div>
-                  {flashing && <span style={styles.savedTag}>сохранено</span>}
+                  {editMode ? (
+                    <div style={S.exTools}>
+                      <button onClick={() => moveExercise(day.id, ex.id, -1)} style={S.iconBtnSm} title="Выше">↑</button>
+                      <button onClick={() => moveExercise(day.id, ex.id, 1)} style={S.iconBtnSm} title="Ниже">↓</button>
+                      <button
+                        onClick={() => deleteExercise(day.id, ex.id)}
+                        style={{ ...S.iconBtnSm, ...S.iconBtnDanger }} title="Удалить"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    savedFlash === ex.id && <span style={S.savedTag}>сохранено</span>
+                  )}
                 </div>
-                <div style={styles.exInputs}>
-                  <label style={styles.inputLabel}>
-                    <span>Вес, кг</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      placeholder="—"
-                      value={log.weight || ''}
-                      onChange={e => updateLog(ex.id, 'weight', e.target.value)}
-                      style={styles.numInput}
-                    />
-                  </label>
-                  <label style={styles.inputLabel}>
-                    <span>Повторы</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="—"
-                      value={log.reps || ''}
-                      onChange={e => updateLog(ex.id, 'reps', e.target.value)}
-                      style={styles.numInput}
-                    />
-                  </label>
-                  <label style={styles.inputLabel}>
-                    <span>Подходы</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="—"
-                      value={log.sets || ''}
-                      onChange={e => updateLog(ex.id, 'sets', e.target.value)}
-                      style={styles.numInput}
-                    />
-                  </label>
+
+                <div style={S.exInputs}>
+                  {[
+                    { key: 'weight', label: 'Вес, кг', mode: 'decimal' },
+                    { key: 'reps', label: 'Повторы', mode: 'numeric' },
+                    { key: 'sets', label: 'Подходы', mode: 'numeric' },
+                  ].map(f => (
+                    <label key={f.key} style={S.inputLabel}>
+                      <span>{f.label}</span>
+                      <input
+                        type="number" inputMode={f.mode} placeholder="—"
+                        value={log[f.key] || ''}
+                        onChange={e => updateLog(ex.id, f.key, e.target.value)}
+                        style={S.numInput}
+                      />
+                    </label>
+                  ))}
                 </div>
               </div>
             );
           })}
+
+          {day.exercises.length === 0 && (
+            <div style={S.emptyNote}>В этом дне пока нет упражнений.</div>
+          )}
+
+          <button onClick={() => addExercise(day.id)} style={S.addExBtn}>
+            + Добавить упражнение
+          </button>
         </div>
 
-        <div style={styles.footerNote}>
-          Данные сохраняются автоматически и не пропадут при перезакрытии. Прогрессия: каждую неделю старайся прибавлять вес или повтор хотя бы в одном подходе.
+        <div style={S.footer}>
+          <div style={S.footerNote}>
+            Всё редактируется: нажми «Редактировать», чтобы менять названия дней, упражнения и рекомендуемые подходы. Данные сохраняются в браузере автоматически.
+          </div>
+          {confirmReset ? (
+            <div style={S.confirmRow}>
+              <span style={S.confirmText}>Удалить весь план и записи?</span>
+              <button onClick={resetAll} style={S.confirmYes}>Да, сбросить</button>
+              <button onClick={() => setConfirmReset(false)} style={S.confirmNo}>Отмена</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmReset(true)} style={S.resetBtn}>
+              Сбросить к стандартной программе
+            </button>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-const styles = {
+// ---------- Styles ----------
+const S = {
   page: {
     minHeight: '100vh',
     background: '#0B0D0A',
     color: '#EDEFE6',
     fontFamily: "'Inter', sans-serif",
-    paddingBottom: '48px',
+    paddingBottom: '56px',
   },
-  header: {
-    padding: '28px 20px 20px',
-    borderBottom: '1px solid #1E211A',
+  header: { padding: '26px 20px 18px', borderBottom: '1px solid #1E211A' },
+  headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' },
+  kicker: { fontFamily: "'Oswald', sans-serif", fontSize: '11px', letterSpacing: '0.14em', color: '#8A9078', marginBottom: '6px' },
+  title: { fontFamily: "'Oswald', sans-serif", fontSize: '30px', fontWeight: 600, margin: 0, color: '#F5F7EC', letterSpacing: '-0.01em' },
+  headerBtns: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  pillBtn: {
+    fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600,
+    background: 'transparent', color: '#C9FF3D', border: '1px solid #3A4230',
+    borderRadius: '999px', padding: '9px 15px', cursor: 'pointer', whiteSpace: 'nowrap',
   },
-  headerTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  kicker: {
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '11px',
-    letterSpacing: '0.14em',
-    color: '#8A9078',
-    marginBottom: '6px',
-  },
-  title: {
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '30px',
-    fontWeight: 600,
-    margin: 0,
-    color: '#F5F7EC',
-    letterSpacing: '-0.01em',
-  },
-  nutBtn: {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '13px',
-    fontWeight: 600,
-    background: 'transparent',
-    color: '#C9FF3D',
-    border: '1px solid #3A4230',
-    borderRadius: '999px',
-    padding: '9px 16px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    marginTop: '4px',
-  },
-  nutBtnActive: {
-    background: '#C9FF3D',
-    color: '#0B0D0A',
-    border: '1px solid #C9FF3D',
-  },
-  errorNote: {
-    marginTop: '10px',
-    fontSize: '11.5px',
-    color: '#FF9B7A',
-  },
-  nutPanel: {
-    padding: '18px 20px 22px',
-    borderBottom: '1px solid #1E211A',
-    background: '#10130D',
-  },
-  nutRow: {
-    display: 'flex',
-    gap: '14px',
-  },
-  nutCol: { flex: 1 },
-  nutLabel: {
-    fontSize: '12px',
-    color: '#9AA089',
-    marginBottom: '6px',
-  },
+  pillBtnActive: { background: '#C9FF3D', color: '#0B0D0A', border: '1px solid #C9FF3D' },
+  errorNote: { marginTop: '12px', fontSize: '11.5px', color: '#FF9B7A', lineHeight: 1.5 },
+
+  nutPanel: { padding: '18px 20px 22px', borderBottom: '1px solid #1E211A', background: '#10130D' },
+  nutRow: { display: 'flex', gap: '14px', flexWrap: 'wrap' },
+  nutCol: { flex: '1 1 150px', minWidth: 0 },
+  nutLabel: { fontSize: '12px', color: '#9AA089', marginBottom: '6px' },
   nutInput: {
-    width: '100%',
-    background: '#191C14',
-    border: '1px solid #2C3123',
-    borderRadius: '10px',
-    color: '#F5F7EC',
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '22px',
-    padding: '8px 12px',
-    outline: 'none',
+    width: '100%', background: '#191C14', border: '1px solid #2C3123', borderRadius: '10px',
+    color: '#F5F7EC', fontFamily: "'Oswald', sans-serif", fontSize: '22px', padding: '8px 12px', outline: 'none',
   },
-  nutTargetRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginTop: '8px',
-  },
-  barTrack: {
-    flex: 1,
-    height: '4px',
-    background: '#22261A',
-    borderRadius: '4px',
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: '4px',
-    transition: 'width 0.3s ease',
-  },
-  nutTargetText: {
-    fontSize: '11px',
-    color: '#767C67',
-    whiteSpace: 'nowrap',
-  },
-  nutHint: {
-    marginTop: '14px',
-    fontSize: '12px',
-    lineHeight: 1.5,
-    color: '#7C8270',
-  },
-  tabsWrap: {
-    padding: '16px 20px 0',
-    overflowX: 'auto',
-  },
-  tabs: {
-    display: 'flex',
-    gap: '8px',
-  },
+  nutTargetRow: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' },
+  barTrack: { flex: 1, height: '4px', background: '#22261A', borderRadius: '4px', overflow: 'hidden', minWidth: '30px' },
+  barFill: { height: '100%', borderRadius: '4px', transition: 'width 0.3s ease' },
+  nutTargetText: { fontSize: '11px', color: '#767C67', whiteSpace: 'nowrap' },
+  inlineNum: { fontSize: '11px', color: '#C9FF3D', fontWeight: 600 },
+  nutHint: { marginTop: '14px', fontSize: '12px', lineHeight: 1.5, color: '#7C8270' },
+
+  tabsWrap: { padding: '16px 20px 0', overflowX: 'auto' },
+  tabs: { display: 'flex', gap: '8px' },
   tab: {
-    flexShrink: 0,
-    background: '#141712',
-    border: '1px solid #22261A',
-    borderRadius: '12px',
-    padding: '10px 16px',
-    cursor: 'pointer',
-    textAlign: 'left',
-    minWidth: '86px',
+    flexShrink: 0, background: '#141712', border: '1px solid #22261A', borderRadius: '12px',
+    padding: '10px 16px', cursor: 'pointer', textAlign: 'left', minWidth: '86px',
   },
-  tabActive: {
-    background: '#1C2114',
-    border: '1px solid #C9FF3D',
+  tabActive: { background: '#1C2114', border: '1px solid #C9FF3D' },
+  tabLabelSmall: { fontSize: '10px', color: '#767C67', letterSpacing: '0.05em', marginBottom: '2px' },
+  tabName: { fontFamily: "'Oswald', sans-serif", fontSize: '15px', fontWeight: 600, color: '#EDEFE6' },
+  tabAdd: {
+    flexShrink: 0, background: 'transparent', border: '1px dashed #3A4230', borderRadius: '12px',
+    color: '#8A9078', fontSize: '20px', lineHeight: 1, cursor: 'pointer', padding: '0 16px', minWidth: '52px',
   },
-  tabLabelSmall: {
-    fontSize: '10px',
-    color: '#767C67',
-    letterSpacing: '0.05em',
-    marginBottom: '2px',
+
+  content: { padding: '22px 20px 0' },
+  dayHeading: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' },
+  dayHeadingText: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap', minWidth: 0 },
+  dayLabelEdit: { fontSize: '11px', color: '#767C67' },
+  dayHeadingName: { fontFamily: "'Oswald', sans-serif", fontSize: '20px', fontWeight: 600, color: '#C9FF3D' },
+  dayHeadingSub: { fontSize: '13px', color: '#8A9078' },
+  dayTools: { display: 'flex', gap: '6px' },
+
+  iconBtn: {
+    background: '#141712', border: '1px solid #2C3123', borderRadius: '8px', color: '#9AA089',
+    fontSize: '13px', width: '30px', height: '30px', cursor: 'pointer', lineHeight: 1,
   },
-  tabName: {
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '15px',
-    fontWeight: 600,
-    color: '#EDEFE6',
+  iconBtnSm: {
+    background: '#161A11', border: '1px solid #262B1D', borderRadius: '6px', color: '#8A9078',
+    fontSize: '11px', width: '24px', height: '24px', cursor: 'pointer', lineHeight: 1, padding: 0,
   },
-  content: {
-    padding: '22px 20px 0',
-  },
-  dayHeading: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '10px',
-    marginBottom: '16px',
-  },
-  dayHeadingName: {
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#C9FF3D',
-  },
-  dayHeadingSub: {
-    fontSize: '13px',
-    color: '#8A9078',
-  },
-  exList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  exCard: {
-    background: '#12140F',
-    border: '1px solid #1E221777',
-    borderRadius: '14px',
-    padding: '14px 14px 16px',
-  },
-  exTop: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px',
-  },
-  exIndex: {
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '13px',
-    color: '#4A5140',
-    fontWeight: 600,
-  },
-  exNameWrap: { flex: 1 },
-  exName: {
-    fontSize: '14.5px',
-    fontWeight: 600,
-    color: '#F0F2E8',
-  },
-  exTarget: {
-    fontSize: '12px',
-    color: '#767C67',
-    marginTop: '2px',
-  },
-  savedTag: {
-    fontSize: '10px',
-    color: '#C9FF3D',
-    fontWeight: 600,
-  },
-  exInputs: {
-    display: 'flex',
-    gap: '8px',
-  },
-  inputLabel: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-    fontSize: '10.5px',
-    color: '#767C67',
-  },
+  iconBtnDanger: { color: '#FF8A66', borderColor: '#3D2A22' },
+  iconBtnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
+
+  exList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  exCard: { background: '#12140F', border: '1px solid #1E2217', borderRadius: '14px', padding: '14px 14px 16px' },
+  exTop: { display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' },
+  exIndex: { fontFamily: "'Oswald', sans-serif", fontSize: '13px', color: '#4A5140', fontWeight: 600, paddingTop: '2px' },
+  exNameWrap: { flex: 1, minWidth: 0 },
+  exName: { fontSize: '14.5px', fontWeight: 600, color: '#F0F2E8', display: 'block' },
+  exTarget: { fontSize: '12px', color: '#767C67', marginTop: '2px', display: 'block' },
+  exTools: { display: 'flex', gap: '4px', flexShrink: 0 },
+  savedTag: { fontSize: '10px', color: '#C9FF3D', fontWeight: 600, flexShrink: 0 },
+
+  exInputs: { display: 'flex', gap: '8px' },
+  inputLabel: { flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '10.5px', color: '#767C67', minWidth: 0 },
   numInput: {
-    background: '#191C14',
-    border: '1px solid #262B1D',
-    borderRadius: '8px',
-    color: '#F5F7EC',
-    fontFamily: "'Oswald', sans-serif",
-    fontSize: '16px',
-    padding: '9px 10px',
-    outline: 'none',
-    width: '100%',
+    background: '#191C14', border: '1px solid #262B1D', borderRadius: '8px', color: '#F5F7EC',
+    fontFamily: "'Oswald', sans-serif", fontSize: '16px', padding: '9px 10px', outline: 'none', width: '100%',
   },
-  footerNote: {
-    marginTop: '22px',
-    fontSize: '11.5px',
-    lineHeight: 1.6,
-    color: '#5C6250',
-    paddingBottom: '10px',
+
+  editableIdle: {
+    cursor: 'text', borderBottom: '1px dashed #3A4230', paddingBottom: '1px',
+    display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word',
+  },
+  editableInput: {
+    background: '#191C14', border: '1px solid #C9FF3D', borderRadius: '6px',
+    padding: '4px 8px', outline: 'none', width: '100%', maxWidth: '100%',
+    fontFamily: 'inherit',
+  },
+
+  emptyNote: { fontSize: '12.5px', color: '#5C6250', padding: '14px 4px' },
+  addExBtn: {
+    background: 'transparent', border: '1px dashed #3A4230', borderRadius: '12px',
+    color: '#8A9078', fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 500,
+    padding: '13px', cursor: 'pointer', marginTop: '2px',
+  },
+
+  footer: { marginTop: '24px', paddingBottom: '12px', display: 'flex', flexDirection: 'column', gap: '14px' },
+  footerNote: { fontSize: '11.5px', lineHeight: 1.6, color: '#5C6250' },
+  resetBtn: {
+    alignSelf: 'flex-start', background: 'transparent', border: '1px solid #2C3123', borderRadius: '999px',
+    color: '#767C67', fontSize: '11.5px', padding: '8px 14px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+  },
+  confirmRow: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' },
+  confirmText: { fontSize: '12px', color: '#C4C9B4' },
+  confirmYes: {
+    background: '#3D2A22', border: '1px solid #5A3A2C', borderRadius: '999px', color: '#FF9B7A',
+    fontSize: '11.5px', padding: '8px 14px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+  },
+  confirmNo: {
+    background: 'transparent', border: '1px solid #2C3123', borderRadius: '999px', color: '#8A9078',
+    fontSize: '11.5px', padding: '8px 14px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
   },
 };
